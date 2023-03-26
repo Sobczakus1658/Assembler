@@ -1,39 +1,54 @@
 global inverse_permutation
 ;rdi - rozmiar tablicy
 ;rsi - wskaznik na tablice 
-;INT_MAX jeszcze może byc ->poprawić 
+;INT_MAX jeszcze może byc ->poprawić
+; zmienić na jb zamiast js
+;xor z 0x8..
 inverse_permutation:
     xor  rbx, rbx
-    mov r9, 0x7fffffff
-    test rdi, rdi
+    mov r9d, 0x7fffffff
+    mov r8d, 0x80000000
+    ;cmp rdi, 0x8...
+    ; potem jnbe 
+    ;cmp rdi, qword 0x1
+    ;jb exit
+    test edi, edi
     js   exit
     je   exit
-    cmp  r9, rdi
-    js  exit
+    cmp rdi, r8
+    jnbe exit
+    ;cmp  r9, rdi
+    ;js  exit
+    ; moge korzystac z edi
+    ; rbx tez moze być juz ebx
 loop:
     ; patrzę czy rbx mniejsze od n, jezeli tak to idz do correct
     mov  eax, [rsi+4*rbx]
-    cmp  eax, 0x0
+    test eax, eax
+    ;cmp  eax, 0x0
     js   exit
-    cmp  rdi, rax
-    js   exit
-    je   exit
-    inc  QWORD rbx
-    cmp  rdi, rbx
+    cmp  edi, eax
+    jbe exit
+    ;js   exit
+    ;je   exit
+    inc  ebx
+    cmp  edi, ebx
     jne  loop
-    xor  rbx, rbx
+    xor  ebx, ebx
 correct:
     mov  eax, [rsi + 4*rbx]
-    and  rax, r9
+    and  eax, r9d
+    ;xor eax, r8d
     mov  ecx, [rsi + 4*rax]
     test ecx, ecx
     js   repair 
-    or   ecx, 0x80000000
-    mov  [rsi + 4*rax],  ecx
-    inc  QWORD rbx 
-    cmp  rdi, rbx
+    ;or   ecx, r8d
+    ;mov  [rsi + 4*rax],  ecx
+    or [rsi + 4*rax], r8d
+    inc  ebx 
+    cmp  edi, ebx
     jne  correct
-    xor  rbx, rbx
+    xor  ebx, ebx
 permutation:
     mov  eax, [rsi + 4*rbx]
     test eax, eax
@@ -52,8 +67,8 @@ inverse:
     js   inverse
     mov  [rsi + 4*rdx], r8d
 after_inverse:
-    inc  QWORD rbx 
-    cmp  rdi, rbx
+    inc  ebx 
+    cmp  edi, ebx
     jne  permutation
     mov  eax, 0x1
     ret
@@ -61,13 +76,13 @@ exit:
     xor  eax, eax
     ret
 repair:
-    xor  rbx, rbx
+    xor  ebx, ebx
 repair_loop:
     mov  eax, [rsi+4*rbx]
     and  eax, r9d
     mov  [rsi+4*rbx], eax 
     inc  QWORD rbx
-    cmp  rdi, rbx
+    cmp  edi, ebx
     jne  repair_loop
     xor  eax, eax
     ret
